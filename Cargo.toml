@@ -1,0 +1,18 @@
+[package]
+name = "gtaol-doctor"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+description = "Read-only diagnostics and reversible cleanup for GTA V Enhanced / BattlEye on Linux (Proton, Lutris, Heroic, Bottles). Not an anti-cheat bypass."
+license = "MIT"
+repository = "https://github.com/AaravJit/claude-gta-5-enhanced-online-compatibility"
+
+# Deliberately zero third-party dependencies: the tool inspects security-relevant
+# configuration and may be run with elevated rights for the hosts cleanup, so the
+# whole thing should be auditable in one sitting and build offline.
+[dependencies]
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

@@ -1,0 +1,37 @@
+# Maintainer: gtaol-doctor contributors
+pkgname=gtaol-doctor-git
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Read-only diagnostics for GTA V Enhanced / BattlEye on Linux (not an anti-cheat bypass)"
+arch=('x86_64')
+url="https://github.com/AaravJit/claude-gta-5-enhanced-online-compatibility"
+license=('MIT')
+depends=('gcc-libs' 'glibc')
+optdepends=('vulkan-tools: report Vulkan driver versions')
+makedepends=('cargo' 'git')
+provides=('gtaol-doctor')
+conflicts=('gtaol-doctor')
+source=("$pkgname::git+$url.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$pkgname"
+  printf "0.1.0.r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+  cd "$pkgname"
+  cargo build --release --locked
+}
+
+check() {
+  cd "$pkgname"
+  cargo test --locked
+}
+
+package() {
+  cd "$pkgname"
+  install -Dm755 target/release/gtaol-doctor "$pkgdir/usr/bin/gtaol-doctor"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}

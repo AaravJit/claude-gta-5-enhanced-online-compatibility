@@ -1,0 +1,47 @@
+name: ci
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  rust:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+      - run: cargo build --release --locked
+      - run: bash -n scripts/collect-baseline.sh
+  msrv:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install 1.74 --profile minimal
+      - run: cargo +1.74 build --locked
+  # Portability: the same tests on the distro families the project targets.
+  distros:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["archlinux:base-devel", "fedora:latest", "debian:stable"]
+    container: ${{ matrix.image }}
+    steps:
+      - name: toolchain
+        run: |
+          if command -v pacman >/dev/null; then pacman -Syu --noconfirm rust git
+          elif command -v dnf >/dev/null; then dnf -y install cargo git
+          else apt-get update && apt-get -y install cargo git; fi
+      - uses: actions/checkout@v4
+      - run: cargo test --locked
+  # Self-owned Windows API probe: must compile cleanly and run under Wine.
+  winprobe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get -y install gcc-mingw-w64-x86-64 wine64
+      - run: x86_64-w64-mingw32-gcc -O2 -Wall -Wextra -Werror -municode -o winprobe.exe winprobe/winprobe.c -ladvapi32
+      - run: WINEPREFIX=$RUNNER_TEMP/pfx WINEDEBUG=-all wine winprobe.exe
